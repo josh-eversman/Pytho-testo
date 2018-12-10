@@ -24,7 +24,7 @@ def upload_link(link):
     return new_nexus_link + forward_link[-2]+ '/'
 
 # forward_link[1]
-
+#craeate a file with link.txt with lines of links to be downloaded and uploaded to new repo.
 def main():
     with open('link_file.txt' ,encoding='utf-8') as fh:
         #fh.strip()
