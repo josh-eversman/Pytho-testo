@@ -1,0 +1,65 @@
+import subprocess
+from threading import Thread
+import time
+
+status_queue=['Status>']
+download_file=['DFiles>']
+upload_file=['UFiles>']
+
+def download_thread(link):
+    std_out=subprocess.run(['wget', '--no-check-certificate', link], stderr=subprocess.STDOUT)
+    time.sleep(30)
+    if std_out.returncode is 0:
+        status_queue.append('True')
+    return None
+
+def upload_thread(file_name, target):
+    #print(file_name, target)
+    std_out=subprocess.check_output(['curl', '-k','-u' 'ChanChen:ChanChen@123','--upload-file',file_name, target],stderr=subprocess.STDOUT)
+    return std_out
+
+def upload_link(link):
+    forward_link = link.split('/')
+    new_nexus_link = 'https://nexus.XXXXXXXX'
+    return new_nexus_link + forward_link[-2]+ '/'
+
+# forward_link[1]
+
+def main():
+    with open('link_file.txt' ,encoding='utf-8') as fh:
+        #fh.strip()
+        for line in fh.readlines():
+            line = line.rstrip('\n')
+            if line:
+                t1 = Thread(target=download_thread, args=(line,))
+                t1.start()
+                #print('stuck bfore join')
+                t1.join()
+                #print('join crossed')
+                if status_queue[-1] == 'True':
+                    *rest, file_name = line.split('/')
+                    download_file.append(file_name)
+                    false_target = upload_link(line)
+                    target=false_target.split(file_name)
+                    t2 = Thread(target=upload_thread, args=(file_name,target[0],))
+                    t2.start()
+                    t2.join()
+                    upload_file.append(file_name)
+                    with open('nexus_mig_success.log', 'a+') as fh2:
+                        fh2.write(str(download_file))
+                        fh2.write(str(upload_file))
+                        fh2.write(str(status_queue))
+
+                else:
+                    with open('nexus_mig_error.log', 'a+') as fh3:
+                        fh3.write(str(download_file))
+                        fh3.write(str(upload_file))
+                        fh3.write(str(status_queue))
+
+                    raise SystemExit('Problem ocuured while transfering data!!!. Please check nexus_mig_logs.log for more info')
+
+
+
+
+#if __name__ == 'main':
+main()
